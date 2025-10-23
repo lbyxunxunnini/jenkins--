@@ -251,15 +251,7 @@ pipeline {
 
                         // 增加 SMB 链接提示（Markdown 超链接）
                         summary += "- **打包产物**: [smb://10.200.35.17](smb://10.200.35.17)"
-
                         sendDingTalkMessage("Android 多渠道打包完成", summary)
-
-
-                        // 增加 SMB 链接提示（Markdown 超链接）
-                        summary += "\n请在 [smb://10.200.35.17](smb://10.200.35.17) 查看打包产物"
-
-                        sendDingTalkMessage("Android 多渠道打包完成", summary)
-
 
                     }
                 }
