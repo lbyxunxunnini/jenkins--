@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        EXPORT_PATH       = "/Users/agi00107/Desktop/package/pack_alpha"
+        EXPORT_PATH       = "../pack_alpha"
         EXPORT_OPTIONS    = "${EXPORT_PATH}/export_options.plist"
         OUTPUT_DIR        = "/Users/agi00107/Desktop/outpackage"
 
