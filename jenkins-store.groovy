@@ -103,12 +103,12 @@ pipeline {
                         if (iosBuildResult == 0) {
                             sendDingTalkMessage(
                                 "iOS 打包完成\n",
-                                "### ✅ iOS 打包完成\n\n- **版本**: ${BUILD_NAME}\n- **BUILD NUMBER**:${IOS_BUILD_NUMBER}\n- **打包产物**: [smb://10.200.35.17](smb://10.200.35.17)"
+                                "### ✅ iOS 打包完成\n\n- **版本**: **${BUILD_NAME}(${IOS_BUILD_NUMBER})**\n- **打包产物**: [smb://10.200.35.17](smb://10.200.35.17)"
                             )
                         } else {
                             sendDingTalkMessage(
                                 "iOS 打包失败\n",
-                                 "### ❌ iOS 打包失败\n\n- **版本**: ${BUILD_NAME}\n- **BUILD NUMBER**:${IOS_BUILD_NUMBER}\n"
+                                 "### ❌ iOS 打包失败\n\n- **版本**: **${BUILD_NAME}(${IOS_BUILD_NUMBER})**\n"
                             )
                             error("iOS 构建失败")
                         }
@@ -242,7 +242,7 @@ pipeline {
                         }
                         // 构建 Android 多渠道打包通知内容
                         def summary = "### ✅ Android 多渠道打包完成\n\n"
-
+                        summary += "- **版本号**: **${BUILD_NAME}(${ANDROID_BUILD_NUMBER})**\n"
                         channelResults.each { ch, res ->
                             def buildStatus = res.build == "成功" ? "✅ 构建成功" : "❌ 构建失败"
                             def protectStatus = res.protect == "成功" ? "✅ 加固成功" : "❌ 加固失败"
