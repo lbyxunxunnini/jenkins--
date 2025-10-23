@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>release-testing</string> <!-- 使用 release-testingc 发布方式 -->
+    <key>signingStyle</key>
+    <string>manual</string> <!-- 设置为 manual 以使用手动选择的证书和描述文件 -->
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>tech.ycyx.yinchao</key> <!-- 你的 Bundle ID -->
+        <string>yinchaoapp_prod_adhoc</string> <!-- 描述文件的名称 -->
+    </dict>
+    <key>signingCertificate</key>
+    <string>iPhone Distribution</string> <!-- 证书类型 -->
+    <key>teamID</key>
+    <string>GPXZK88F73</string> <!-- 你的 Team ID -->
+    <key>compileBitcode</key>
+    <false/> <!-- 如果不需要 Bitcode，可以关闭 -->
+</dict>
+</plist>

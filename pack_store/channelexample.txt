@@ -1,0 +1,6 @@
+﻿#android:name android:value channel_name
+CHANNEL_ID google 谷歌
+CHANNEL_ID umeng 友盟
+CHANNEL_ID 91 91助手
+CHANNEL_ID mi 小米
+CHANNEL_ID|type_id wandoujia|1 豌豆荚
