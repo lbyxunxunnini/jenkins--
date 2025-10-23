@@ -9,6 +9,8 @@ pipeline {
         BUILD_NAME        = "${env.VERSION ?: '1.0.0'}"
         BUILD_NUMBER      = "${env.BUILDNUM ?: '1'}"
         APP_ENV           = "${env.APP_ENV ?: 'test'}"   // test / prod
+        IOS_CHANNEL       = "${env.IOS_CHANNEL ?: 'debug'}"
+        AN_CHANNEL        = "${env.AN_CHANNEL ?: 'debug'}"
 
         PGYER_API_KEY     = "cc4f2c2299fb7ccb2ce7b1c9581e4d01"
         PGYER_UPDATE_DESC = "${env.PGYER_UPDATE_DESC ?: '自动构建上传'}"
@@ -108,7 +110,7 @@ pipeline {
                             --dart-define-from-file="$DART_DEFINE_FILE" \
                             --dart-define=WATERMARK=true \
                             --dart-define=DEV_CONFIG=true \
-                            --dart-define=DISTRIBUTE_CHANNEL=debug \
+                            --dart-define=DISTRIBUTE_CHANNEL="$IOS_CHANNEL" \
                             --export-options-plist="$EXPORT_OPTIONS" \
                             --build-name="$BUILD_NAME" \
                             --build-number="$BUILD_NUMBER"
@@ -224,7 +226,7 @@ pipeline {
                             --dart-define-from-file="$DART_DEFINE_FILE" \
                             --dart-define=WATERMARK=true \
                             --dart-define=DEV_CONFIG=true \
-                            --dart-define=DISTRIBUTE_CHANNEL=debug \
+                            --dart-define=DISTRIBUTE_CHANNEL="$AN_CHANNEL" \
                             --build-name="$BUILD_NAME" \
                             --build-number="$BUILD_NUMBER"
                     '''
