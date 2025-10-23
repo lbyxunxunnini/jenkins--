@@ -202,7 +202,7 @@ pipeline {
                         awk '
                             /android:name=".MainActivity"/ { inActivity=1 }
                             inActivity && /android:launchMode=/ {
-                                sub(/android:launchMode="singleInstance"/, "android:launchMode=\\"standard\\"")
+                                sub(/android:launchMode="singleTask"/, "android:launchMode=\\"standard\\"")
                             }
                             inActivity && /<\\/activity>/ { inActivity=0 }
                             { print }
