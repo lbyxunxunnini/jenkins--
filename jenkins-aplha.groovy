@@ -6,6 +6,7 @@ pipeline {
         EXPORT_OPTIONS    = "${EXPORT_PATH}/export_options.plist"
         OUTPUT_DIR        = "/Users/agi00107/Desktop/outpackage"
 
+        FLUTTER_VERSION   = "${env.FLUTTER_VERSION ?: '3.27.4'}"
         BUILD_NAME        = "${env.VERSION ?: '1.0.0'}"
         BUILD_NUMBER      = "${env.BUILDNUM ?: '1'}"
         APP_ENV           = "${env.APP_ENV ?: 'test'}"   // test / prod
@@ -79,6 +80,7 @@ pipeline {
                 dir('facesong_flutter') {
                     echo "🧹 [2/6] flutter clean & pub get, 替换签名文件"
                     sh '''
+                        fvm use "$FLUTTER_VERSION"
                         rm -f ios/Podfile.lock
                         fvm flutter clean
                         export PUB_HOSTED_URL=https://pub.flutter-io.cn
