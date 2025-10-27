@@ -81,9 +81,10 @@ pipeline {
                     echo "🧹 [2/6] flutter clean & pub get, 替换签名文件"
                     sh '''
                         fvm use "$FLUTTER_VERSION"
+                        export PUB_HOSTED_URL=https://pub.flutter-io.cn
+                        export FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn
                         rm -f ios/Podfile.lock
                         fvm flutter clean
-                        export PUB_HOSTED_URL=https://pub.flutter-io.cn
                         fvm flutter pub get
                         cp "$EXPORT_PATH/key.properties" android/app/key.properties
                         cp "$EXPORT_PATH/release.keystore" android/app/release.keystore
