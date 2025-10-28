@@ -7,6 +7,8 @@ pipeline {
         OUTPUT_DIR        = "/Users/agi00107/Desktop/outpackage"
 
         FLUTTER_VERSION   = "${env.FLUTTER_VERSION ?: '3.27.4'}"
+        // ⚙️ Impeller 启用开关（默认 true，可在 Jenkins 参数中设置 ENABLE_IMPELLER=false）
+        ENABLE_IMPELLER   = "${env.ENABLE_IMPELLER != null ? env.ENABLE_IMPELLER : 'true'}"
         BUILD_NAME        = "${env.VERSION ?: '1.0.0'}"
         BUILD_NUMBER      = "${env.BUILDNUM ?: '1'}"
         APP_ENV           = "${env.APP_ENV ?: 'test'}"   // test / prod
@@ -195,6 +197,26 @@ pipeline {
             }
         }
         
+        stage('设置 Flutter Impeller（可选）') {
+            when { expression { return env.BUILD_ANDROID == "true" && !env.ENABLE_IMPELLER.toBoolean() } }
+            steps {
+                dir('facesong_flutter') {
+                    echo "🚫 检测到 ENABLE_IMPELLER = false，禁用 Impeller 渲染引擎"
+                    sh '''
+                        awk '
+                            /<application/ {
+                                print;
+                                print "        <meta-data android:name=\\"io.flutter.embedding.android.EnableImpeller\\" android:value=\\"false\\" />";
+                                next
+                            }
+                            /io.flutter.embedding.android.EnableImpeller/ { next }  # 删除旧的重复项
+                            { print }
+                        ' android/app/src/main/AndroidManifest.xml > AndroidManifest.tmp && mv AndroidManifest.tmp android/app/src/main/AndroidManifest.xml
+                    '''
+                }
+            }
+        }
+
         stage('修改 MainActivity launchMode') {
             when { expression { return env.BUILD_ANDROID == "true" && env.UM_LOG == "true" } }
             steps {
