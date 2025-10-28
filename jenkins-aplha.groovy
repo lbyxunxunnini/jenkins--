@@ -203,15 +203,24 @@ pipeline {
                 dir('facesong_flutter') {
                     echo "🚫 检测到 ENABLE_IMPELLER = false，禁用 Impeller 渲染引擎"
                     sh '''
+                        MANIFEST="android/app/src/main/AndroidManifest.xml"
+                        TMPFILE="AndroidManifest.tmp"
+
+                        # 删除旧的 Impeller 节点（若已存在）
+                        grep -v 'io.flutter.embedding.android.EnableImpeller' "$MANIFEST" > "$TMPFILE"
+
+                        # 在 wechat_kit_main_activity 元数据后插入 Impeller 节点
                         awk '
-                            /<application/ {
+                            /android:name="wechat_kit_main_activity"/ {
                                 print;
                                 print "        <meta-data android:name=\\"io.flutter.embedding.android.EnableImpeller\\" android:value=\\"false\\" />";
                                 next
                             }
-                            /io.flutter.embedding.android.EnableImpeller/ { next }  # 删除旧的重复项
                             { print }
-                        ' android/app/src/main/AndroidManifest.xml > AndroidManifest.tmp && mv AndroidManifest.tmp android/app/src/main/AndroidManifest.xml
+                        ' "$TMPFILE" > "$MANIFEST"
+
+                        rm "$TMPFILE"
+                        echo "✅ 已在 AndroidManifest.xml 中插入禁用 Impeller 配置"
                     '''
                 }
             }
