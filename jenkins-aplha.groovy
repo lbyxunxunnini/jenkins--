@@ -206,25 +206,28 @@ pipeline {
                         MANIFEST="android/app/src/main/AndroidManifest.xml"
                         TMPFILE="AndroidManifest.tmp"
 
-                        # 删除旧的 Impeller 节点（若已存在）
-                        grep -v 'io.flutter.embedding.android.EnableImpeller' "$MANIFEST" > "$TMPFILE"
-
-                        # 在 wechat_kit_main_activity 元数据后插入 Impeller 节点
+                        # 匹配完整多行 meta-data 并在其后插入 Impeller 配置
                         awk '
-                            /android:name="wechat_kit_main_activity"/ {
-                                print;
-                                print "        <meta-data android:name=\\"io.flutter.embedding.android.EnableImpeller\\" android:value=\\"false\\" />";
+                            /<meta-data[[:space:]]+android:name="wechat_kit_main_activity"[[:space:]]+/ {
+                                in_block=1
+                                print
+                                next
+                            }
+                            in_block && /android:value="tech.ycyx.yinchao.MainActivity"[[:space:]]*\/>/ {
+                                print
+                                print "        <meta-data\\n            android:name=\\"io.flutter.embedding.android.EnableImpeller\\"\\n            android:value=\\"false\\" />"
+                                in_block=0
                                 next
                             }
                             { print }
-                        ' "$TMPFILE" > "$MANIFEST"
+                        ' "$MANIFEST" > "$TMPFILE" && mv "$TMPFILE" "$MANIFEST"
 
-                        rm "$TMPFILE"
-                        echo "✅ 已在 AndroidManifest.xml 中插入禁用 Impeller 配置"
+                        echo "✅ 已成功插入禁用 Impeller 配置"
                     '''
                 }
             }
         }
+
 
         stage('修改 MainActivity launchMode') {
             when { expression { return env.BUILD_ANDROID == "true" && env.UM_LOG == "true" } }
