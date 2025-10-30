@@ -204,20 +204,17 @@ pipeline {
                 dir('facesong_flutter') {
                     echo "🚫 检测到 ENABLE_IMPELLER = false，禁用 Impeller 渲染引擎"
                     sh '''
-        python3 - <<'EOF'
+        cat > disable_impeller.py <<'PYTHON'
         import xml.etree.ElementTree as ET
 
         manifest_path = "android/app/src/main/AndroidManifest.xml"
         tree = ET.parse(manifest_path)
         root = tree.getroot()
 
-        # 找到 <application> 节点
         application = root.find('application')
 
-        # 遍历 <meta-data> 找到 wechat_kit_main_activity
         for md in application.findall('meta-data'):
             if md.get('android:name') == 'wechat_kit_main_activity' and md.get('android:value') == 'tech.ycyx.yinchao.MainActivity':
-                # 检查是否已经插入过 Impeller
                 exists = any(m.get('android:name') == 'io.flutter.embedding.android.EnableImpeller' for m in application.findall('meta-data'))
                 if not exists:
                     impeller = ET.Element('meta-data')
@@ -228,12 +225,17 @@ pipeline {
                 break
 
         tree.write(manifest_path, encoding='utf-8', xml_declaration=True)
-        EOF
-                        echo "✅ 已成功插入禁用 Impeller 配置"
-                    '''
+        PYTHON
+
+        python3 disable_impeller.py
+        rm disable_impeller.py
+
+        echo "✅ 已成功插入禁用 Impeller 配置"
+        '''
                 }
             }
         }
+
 
 
 
