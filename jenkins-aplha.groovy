@@ -204,7 +204,7 @@ pipeline {
                 dir('facesong_flutter') {
                     echo "🚫 检测到 ENABLE_IMPELLER = false，禁用 Impeller 渲染引擎"
                     sh '''
-                        python3 disable_impeller.py
+                        python3 ../disable_impeller.py
                     '''
                 }
             }
