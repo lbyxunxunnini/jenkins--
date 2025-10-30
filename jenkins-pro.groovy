@@ -80,6 +80,7 @@ pipeline {
                 dir('facesong_flutter') {
                     echo "🧹 [2/6] flutter clean & pub get, 替换签名文件"
                     sh '''
+                        rm pubspec.lock
                         rm -f ios/Podfile.lock
                         fvm flutter clean
                         export PUB_HOSTED_URL=https://pub.flutter-io.cn
