@@ -208,12 +208,12 @@ pipeline {
 
                         # 匹配完整多行 meta-data 并在其后插入 Impeller 配置
                         awk '
-                            /<meta-data[[:space:]]+android:name="wechat_kit_main_activity"[[:space:]]+/ {
+                            /<meta-data[[:space:]]+android:name="wechat_kit_main_activity"[[:space:]]*/ {
                                 in_block=1
                                 print
                                 next
                             }
-                            in_block && /android:value="tech.ycyx.yinchao.MainActivity"[[:space:]]*\/>/ {
+                            in_block && /android:value="tech.ycyx.yinchao.MainActivity"[[:space:]]*>/ {
                                 print
                                 print "        <meta-data\\n            android:name=\\"io.flutter.embedding.android.EnableImpeller\\"\\n            android:value=\\"false\\" />"
                                 in_block=0
@@ -227,6 +227,7 @@ pipeline {
                 }
             }
         }
+
 
 
         stage('修改 MainActivity launchMode') {
