@@ -203,30 +203,38 @@ pipeline {
                 dir('facesong_flutter') {
                     echo "🚫 检测到 ENABLE_IMPELLER = false，禁用 Impeller 渲染引擎"
                     sh '''
-                        MANIFEST="android/app/src/main/AndroidManifest.xml"
-                        TMPFILE="AndroidManifest.tmp"
+                        python3 - <<'EOF'
+        import xml.etree.ElementTree as ET
 
-                        # 匹配完整多行 meta-data 并在其后插入 Impeller 配置
-                        awk '
-                            /<meta-data[[:space:]]+android:name="wechat_kit_main_activity"[[:space:]]*/ {
-                                in_block=1
-                                print
-                                next
-                            }
-                            in_block && /android:value="tech.ycyx.yinchao.MainActivity"[[:space:]]*>/ {
-                                print
-                                print "        <meta-data\\n            android:name=\\"io.flutter.embedding.android.EnableImpeller\\"\\n            android:value=\\"false\\" />"
-                                in_block=0
-                                next
-                            }
-                            { print }
-                        ' "$MANIFEST" > "$TMPFILE" && mv "$TMPFILE" "$MANIFEST"
+        manifest_path = "android/app/src/main/AndroidManifest.xml"
+        tree = ET.parse(manifest_path)
+        root = tree.getroot()
 
+        # 找到 <application> 节点
+        application = root.find('application')
+
+        # 遍历 <meta-data> 找到 wechat_kit_main_activity
+        for md in application.findall('meta-data'):
+            if md.get('android:name') == 'wechat_kit_main_activity' and md.get('android:value') == 'tech.ycyx.yinchao.MainActivity':
+                # 检查是否已经插入过 Impeller
+                exists = any(m.get('android:name') == 'io.flutter.embedding.android.EnableImpeller' for m in application.findall('meta-data'))
+                if not exists:
+                    impeller = ET.Element('meta-data')
+                    impeller.set('android:name', 'io.flutter.embedding.android.EnableImpeller')
+                    impeller.set('android:value', 'false')
+                    idx = list(application).index(md)
+                    application.insert(idx + 1, impeller)
+                break
+
+        # 保存 XML，保持原编码
+        tree.write(manifest_path, encoding='utf-8', xml_declaration=True)
+        EOF
                         echo "✅ 已成功插入禁用 Impeller 配置"
                     '''
                 }
             }
         }
+
 
 
 
