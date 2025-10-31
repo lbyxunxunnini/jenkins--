@@ -220,7 +220,7 @@ pipeline {
                     echo "🤖 [4/6] 构建 Android APK"
                     sh '''
                         sed -i '' 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
-                        sh build.sh ipa \
+                        sh build.sh apk \
                             --channel "$AN_CHANNEL" \
                             --flavor production \
                             --release \
