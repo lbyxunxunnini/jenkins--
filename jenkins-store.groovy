@@ -233,15 +233,17 @@ pipeline {
                         // ---------- 5️⃣ 按渠道拆分并重命名 ----------
                         echo "📂 根据 APK 名称拆分渠道文件夹并重命名..."
                         sh """
-                            cd ${APK_OUTPUT_PATH}/sign_apk
+                            bash -c '
+                            cd "${APK_OUTPUT_PATH}/sign_apk"
                             for apk in *.apk; do
-                                channel=\\$(echo "\\$apk" | sed -n 's/.*_sec_\\([a-zA-Z0-9_-]*\\)_sign\\.apk/\\1/p')
-                                if [ -n "\\$channel" ]; then
-                                    mkdir -p "\\$channel"
-                                    mv "\\$apk" "\\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\\$channel.apk"
-                                    echo "✅ \\$apk -> \\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\\$channel.apk"
+                                channel=\$(echo "\$apk" | sed -n "s/.*_sec_\\([a-zA-Z0-9_-]*\\)_sign\\.apk/\\1/p")
+                                if [ -n "\$channel" ]; then
+                                    mkdir -p "\$channel"
+                                    mv "\$apk" "\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\$channel.apk"
+                                    echo "✅ \$apk -> \$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\$channel.apk"
                                 fi
                             done
+                            '
                         """
                         echo "✅ APK 已按渠道拆分并重命名完成"
 
