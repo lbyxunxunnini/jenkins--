@@ -24,7 +24,7 @@ pipeline {
         PROTECT_APK            = "${env.PROTECT_APK ?: 'true'}"
         SECAPI_JAR_PATH        = "${EXPORT_PATH}/secapi-4.1.5-SNAPSHOT.jar"
         CHANNEL_FILE           = "${EXPORT_PATH}/channelname.txt" 
-
+        UNZIP_PATH             = "${EXPORT_PATH}/unzip.sh"
         // ===================== 钉钉告警 =====================
         DINGTALK_WEBHOOK       = "https://oapi.dingtalk.com/robot/send?access_token=ae7a01ed25859f3e9f995717eacbb5bd67dde43cbcb889c27a5868aad347016a"
         // DINGTALK_WEBHOOK       = "https://oapi.dingtalk.com/robot/send?access_token=057c702cdb1896282659cd07439846fd07ec052cf599883260c08f289f2cd89f"
@@ -158,9 +158,9 @@ pipeline {
                             script: """
                                 set -e
                                 if sed --version >/dev/null 2>&1; then
-                                sed -i 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
+                                    sed -i 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
                                 else
-                                sed -i '' 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
+                                    sed -i '' 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
                                 fi
 
                                 fvm flutter build apk \
@@ -184,7 +184,7 @@ pipeline {
                             error("❌ 未找到 APK 文件: ${builtApk}")
                         }
 
-                        // ---------- APK 加固 ----------
+                        // APK 加固
                         if (env.PROTECT_APK == "true") {
                             echo "🔒 开始加固 APK"
                             def protectResult = sh(
@@ -210,37 +210,25 @@ pipeline {
                             echo "⚙️ 未开启加固，直接复制构建产物"
                             sh "cp -v ${builtApk} ${APK_OUTPUT_PATH}/app-production-release.apk"
                         }
-
-                        // ---------- 压缩输出目录并解压到 sign_apk ----------
-                        sh """
-                            set -e
-                            cd "${APK_OUTPUT_PATH}"
-                            zip -r app_package.zip ./*
-                            rm -rf sign_apk
-                            mkdir -p sign_apk
-                            unzip -q app_package.zip -d sign_apk
-                        """
-
-                        echo "✅ zip 解压完成，产物文件夹命名为 sign_apk"
-
-                        // ---------- 按渠道拆分并重命名 ----------
-                        sh """
-                            set -e
-                            cd "${APK_OUTPUT_PATH}/sign_apk"
-                            for apk in *.apk; do
-                                channel=\$(echo "\$apk" | sed -n 's/.*_sec_\\([a-zA-Z0-9_-]*\\)_sign\\.apk/\\1/p')
-                                if [ -n "\$channel" ]; then
-                                    mkdir -p "\$channel"
-                                    mv "\$apk" "\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\$channel.apk"
-                                    echo "✅ \$apk -> \$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\$channel.apk"
-                                fi
-                            done
-                        """
-                        echo "✅ APK 已按渠道拆分并重命名完成"
                     }
                 }
             }
         }
+
+        stage('压缩 & 解压 & 拆分渠道 APK') {
+            when { expression { return env.BUILD_ANDROID == "true" } }
+            steps {
+                script {
+                    echo "📂 调用 unzip.sh 脚本处理 APK"
+                    sh """
+                        chmod +x "${UNZIP_PATH}"
+                        "${UNZIP_PATH}" "${APK_OUTPUT_PATH}" "${BUILD_NAME}" "${ANDROID_BUILD_NUMBER}"
+                    """
+                    echo "✅ APK 已按渠道拆分并重命名完成"
+                }
+            }
+        }
+
 
 
 
