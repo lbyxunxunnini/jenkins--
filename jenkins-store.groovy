@@ -18,21 +18,22 @@ pipeline {
         // ===================== Git 仓库 =====================
         GIT_REPO               = 'git@codeup.aliyun.com:6710bdc09d3c82efe37b13cc/facesong/facesong_flutter.git'
         GIT_CREDENTIAL_ID      = 'git-ssh-key'
-
-        // ===================== 钉钉告警 =====================
-        DINGTALK_WEBHOOK       = "https://oapi.dingtalk.com/robot/send?access_token=057c702cdb1896282659cd07439846fd07ec052cf599883260c08f289f2cd89f"
+        GIT_REF                = "${env.GIT_REF ?: 'main'}"
 
         // ===================== APK 加固配置 =====================
         PROTECT_APK            = "${env.PROTECT_APK ?: 'true'}"
         SECAPI_JAR_PATH        = "${EXPORT_PATH}/secapi-4.1.5-SNAPSHOT.jar"
-        ANDROID_CHANNELS       = "${env.ANDROID_CHANNELS ?: 'debug'}"
+        CHANNEL_FILE           = "${EXPORT_PATH}/channelexname.txt" 
+
+        // ===================== 钉钉告警 =====================
+        DINGTALK_WEBHOOK       = "https://oapi.dingtalk.com/robot/send?access_token=057c702cdb1896282659cd07439846fd07ec052cf599883260c08f289f2cd89f"
     }
 
     stages {
         stage('初始化仓库') {
             steps {
                 dir('facesong_flutter') {
-                    echo "🚀 [1/9] 初始化 Git 仓库..."
+                    echo "🚀 [1/7] 初始化 Git 仓库..."
                     script {
                         def gitDirExists = fileExists('.git')
                         if (!gitDirExists) {
@@ -43,7 +44,7 @@ pipeline {
                         }
 
                         checkout([$class: 'GitSCM',
-                            branches: [[name: "$GIT_REF"]],
+                            branches: [[name: "${env.GIT_REF}"]],
                             doGenerateSubmoduleConfigurations: false,
                             extensions: [[$class: 'CleanBeforeCheckout']],
                             userRemoteConfigs: [[
@@ -59,7 +60,7 @@ pipeline {
 
         stage('确认版本号') {
             steps {
-                echo "🔢 [2/9] 版本号确认：BUILD_NAME=${BUILD_NAME}, IOS_BUILD_NUMBER=${IOS_BUILD_NUMBER}, ANDROID_BUILD_NUMBER=${ANDROID_BUILD_NUMBER}"
+                echo "🔢 [2/7] 版本号确认：BUILD_NAME=${BUILD_NAME}, IOS_BUILD_NUMBER=${IOS_BUILD_NUMBER}, ANDROID_BUILD_NUMBER=${ANDROID_BUILD_NUMBER}"
             }
         }
 
@@ -67,8 +68,8 @@ pipeline {
             steps {
                 dir('facesong_flutter') {
                     sh """
-                        rm pubspec.lock
-                        rm -f ios/Podfile.lock
+                        set -e
+                        rm -f pubspec.lock ios/Podfile.lock
                         fvm flutter clean
                         export PUB_HOSTED_URL=https://pub.flutter-io.cn
                         fvm flutter pub get
@@ -82,34 +83,31 @@ pipeline {
             steps {
                 dir('facesong_flutter') {
                     script {
-                        def iosBuildResult = 1
-                        try {
-                            iosBuildResult = sh(script: """
-                                fvm flutter build ipa \
+                        def iosBuildResult = sh(
+                            script: """
+                                set -e
+                                sh build.sh ipa \
+                                    --channel AppStore \
                                     --flavor production \
                                     --export-options-plist=${EXPORT_OPTIONS_PLIST_PATH} \
                                     --dart-define-from-file=\${DART_DEFINE_FILE} \
                                     --dart-define=WATERMARK=false \
-                                    --dart-define=DISTRIBUTE_CHANNEL=AppStore \
                                     --dart-define=DEV_CONFIG=false \
                                     --build-name ${BUILD_NAME} \
                                     --build-number ${IOS_BUILD_NUMBER}
-                            """, returnStatus: true)
-
-                            sh 'find build/ios/ipa -name "*.ipa" || exit 1'
-                        } catch (err) {
-                            iosBuildResult = 1
-                        }
+                            """,
+                            returnStatus: true
+                        )
 
                         if (iosBuildResult == 0) {
                             sendDingTalkMessage(
-                                "iOS 打包完成\n",
-                                "### ✅ iOS 打包完成\n\n- **版本**: **${BUILD_NAME}(${IOS_BUILD_NUMBER})**\n- **打包产物**: [smb://10.200.35.17](smb://10.200.35.17)"
+                                "iOS 打包完成",
+                                "### ✅ iOS 打包完成\n- 版本: ${BUILD_NAME} (${IOS_BUILD_NUMBER})\n- 产物路径: [smb://10.200.35.17](smb://10.200.35.17)"
                             )
                         } else {
                             sendDingTalkMessage(
-                                "iOS 打包失败\n",
-                                 "### ❌ iOS 打包失败\n\n- **版本**: **${BUILD_NAME}(${IOS_BUILD_NUMBER})**\n"
+                                "iOS 打包失败",
+                                "### ❌ iOS 打包失败\n- 版本: ${BUILD_NAME} (${IOS_BUILD_NUMBER})"
                             )
                             error("iOS 构建失败")
                         }
@@ -126,6 +124,7 @@ pipeline {
                         def sourceDir = "build/ios/archive/Runner.xcarchive"
                         def targetDir = "${ARCHIVE_OUTPUT_PATH}/Runner.xcarchive"
                         sh """
+                            set -e
                             mkdir -p "${ARCHIVE_OUTPUT_PATH}"
                             if [ -d "${sourceDir}" ]; then
                                 rm -rf "${targetDir}"
@@ -139,126 +138,117 @@ pipeline {
             }
         }
 
-        stage('构建 & 加固多渠道 Android APK') {
+        stage('构建 & 加固 Android APK') {
             when { expression { return env.BUILD_ANDROID == "true" } }
             steps {
                 dir('facesong_flutter') {
                     script {
-                        def channels = (env.ANDROID_CHANNELS ?: "debug").split(',')
-                        echo "🔹 构建渠道: ${channels}"
+                        sh "mkdir -p ${APK_OUTPUT_PATH}"
 
-                        // 存储每个渠道的最终状态
-                        def channelResults = [:]
+                        sh """
+                            set -e
+                            cp "${EXPORT_PATH}/key.properties" android/app/key.properties
+                            cp "${EXPORT_PATH}/release.keystore" android/app/release.keystore
+                        """
 
-                        channels.each { channel ->
-                            def channelDir = "${APK_OUTPUT_PATH}/${channel}"
-                            def apkFileName = "app-production-${channel}-release.apk"
-                            def apkPath = "${channelDir}/${apkFileName}"  // 最终输出路径
+                        echo "🟢 开始构建 APK"
 
-                            // 创建渠道输出目录
-                            sh "mkdir -p ${channelDir}"
+                        def buildResult = sh(
+                            script: """
+                                set -e
+                                if sed --version >/dev/null 2>&1; then
+                                  sed -i 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
+                                else
+                                  sed -i '' 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
+                                fi
 
-                            // 复制签名文件
-                            sh """
-                                cp "${EXPORT_PATH}/key.properties" android/app/key.properties
-                                cp "${EXPORT_PATH}/release.keystore" android/app/release.keystore
-                            """
+                                fvm flutter build apk \
+                                    --flavor production \
+                                    --release \
+                                    --dart-define-from-file="\${DART_DEFINE_FILE}" \
+                                    --dart-define=WATERMARK=false \
+                                    --dart-define=DEV_CONFIG=false \
+                                    --build-name="${BUILD_NAME}" \
+                                    --build-number="${ANDROID_BUILD_NUMBER}"
+                            """,
+                            returnStatus: true
+                        )
 
-                            echo "🟢 [${channel}] 开始构建 APK"
+                        if (buildResult != 0) {
+                            sendDingTalkMessage(
+                                "Android 构建失败",
+                                "### ❌ Android 构建失败\n- 版本: ${BUILD_NAME} (${ANDROID_BUILD_NUMBER})"
+                            )
+                            error("❌ APK 构建失败")
+                        }
 
-                            // Flutter 构建
-                            def buildResult = sh(
+                        def builtApk = "build/app/outputs/flutter-apk/app-production-release.apk"
+                        if (!fileExists(builtApk)) {
+                            error("❌ 未找到 APK 文件: ${builtApk}")
+                        }
+
+                        if (env.PROTECT_APK == "true") {
+                            echo "🔒 开始加固 APK"
+                            def protectResult = sh(
                                 script: """
-                                    sed -i '' 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
-                                    fvm flutter build apk \
-                                        --flavor production \
-                                        --release \
-                                        --dart-define-from-file="\${DART_DEFINE_FILE}" \
-                                        --dart-define=WATERMARK=false \
-                                        --dart-define=DEV_CONFIG=false \
-                                        --dart-define=DISTRIBUTE_CHANNEL=${channel} \
-                                        --build-name="${BUILD_NAME}" \
-                                        --build-number="${ANDROID_BUILD_NUMBER}"
+                                    set -e
+                                    java -jar "${SECAPI_JAR_PATH}" \
+                                        -i 10.200.18.111:8000 \
+                                        -u zyljsh \
+                                        -a 3e41fc10-8c1b-44c2-9c1c-d3a99b1330ca \
+                                        -c ba2749da-6086-41cd-b801-ee75727c4bdd \
+                                        -f 0 -t 100000 \
+                                        -p "${builtApk}" -d "${APK_OUTPUT_PATH}" \
+                                        --action ud --ks 1 -l "${CHANNEL_FILE}"
                                 """,
                                 returnStatus: true
                             )
 
-                            def copyResult = 1
-                            if (buildResult == 0) {
-                                echo "✅ [${channel}] APK 构建成功"
-
-                                // 构建成功后复制到最终输出目录
-                                copyResult = sh(
-                                    script: """
-                                        src_apk="build/app/outputs/flutter-apk/app-production-release.apk"
-                                        if [ ! -f "\${src_apk}" ]; then
-                                            echo "❌ [${channel}] 未找到 APK 文件: \${src_apk}"
-                                            exit 1
-                                        fi
-                                        cp -v "\${src_apk}" "${apkPath}"
-                                        echo "✅ [${channel}] 已复制 APK 文件到: ${apkPath}"
-                                    """,
-                                    returnStatus: true
+                            if (protectResult != 0) {
+                                sendDingTalkMessage(
+                                    "Android 加固失败",
+                                    "### ❌ Android APK 加固失败\n- 版本: ${BUILD_NAME} (${ANDROID_BUILD_NUMBER})"
                                 )
-                                if (copyResult != 0) {
-                                    echo "❌ [${channel}] APK 复制失败"
-                                }
-                            } else {
-                                echo "❌ [${channel}] APK 构建失败"
+                                error("❌ APK 加固失败")
                             }
-
-                            // APK 加固
-                            def protectResult = "未执行"
-                            if (env.PROTECT_APK == "true" && buildResult == 0 && copyResult == 0) {
-                                echo "🔒 [${channel}] 开始加固 APK"
-
-                                def protectCommand = """
-                                    java -jar "${SECAPI_JAR_PATH}" \
-                                    -i 10.200.18.111:8000 \
-                                    -u zyljsh \
-                                    -a 3e41fc10-8c1b-44c2-9c1c-d3a99b1330ca \
-                                    -c ba2749da-6086-41cd-b801-ee75727c4bdd \
-                                    -f 0 -t 100000 \
-                                    -p "${apkPath}" -d "${channelDir}" \
-                                    --action ud --ks 1 -r ${channel}
-                                """
-
-                                // 执行加固命令并判断结果
-                                def protectExitCode = sh(script: protectCommand, returnStatus: true)
-                                if (protectExitCode == 0) {
-                                    echo "✅ [${channel}] APK 加固成功"
-                                    protectResult = "成功"
-                                } else {
-                                    echo "❌ [${channel}] APK 加固失败"
-                                    protectResult = "失败"
-                                }
-                            }
-
-                            // 保存渠道结果
-                            channelResults[channel] = [
-                                build: buildResult == 0 ? "成功" : "失败",
-                                copy: copyResult == 0 ? "成功" : "失败",
-                                protect: protectResult
-                            ]
-                        }
-                        // 构建 Android 多渠道打包通知内容
-                        def summary = "### ✅ Android 多渠道打包完成\n\n"
-                        summary += "- **版本号**: **${BUILD_NAME}(${ANDROID_BUILD_NUMBER})**\n"
-                        channelResults.each { ch, res ->
-                            def buildStatus = res.build == "成功" ? "✅ 构建成功" : "❌ 构建失败"
-                            def protectStatus = res.protect == "成功" ? "✅ 加固成功" : "❌ 加固失败"
-                            summary += "- **渠道**: ${ch}\n  - 构建状态: ${buildStatus}\n  - 加固状态: ${protectStatus}\n"
+                            echo "✅ APK 加固成功"
+                        } else {
+                            echo "⚙️ 未开启加固，直接复制构建产物"
+                            sh "cp -v ${builtApk} ${APK_OUTPUT_PATH}/app-production-release.apk"
                         }
 
-                        // 增加 SMB 链接提示（Markdown 超链接）
-                        summary += "- **打包产物**: [smb://10.200.35.17](smb://10.200.35.17)"
-                        sendDingTalkMessage("Android 多渠道打包完成", summary)
+                        // ---------- 4️⃣ 压缩并解压 ----------
+                        echo "📦 打包 APK 输出目录为 zip 并解压..."
+                        sh """
+                            cd ${APK_OUTPUT_PATH}
+                            zip -r app_package.zip .  # 压缩当前 APK 输出目录所有文件
+                            rm -rf sign_apk           # 删除旧的 sign_apk 文件夹（如果存在）
+                            unzip -q app_package.zip -d sign_apk
+                        """
+                        echo "✅ zip 解压完成，产物文件夹命名为 sign_apk"
 
+                        // ---------- 5️⃣ 按渠道拆分并重命名 ----------
+                        echo "📂 根据 APK 名称拆分渠道文件夹并重命名..."
+                        sh """
+                            cd ${APK_OUTPUT_PATH}/sign_apk
+                            for apk in *.apk; do
+                                channel=\$(echo \$apk | sed -n 's/.*_sec_\\(.*\\)_sign\\.apk/\\1/p')
+                                if [ -n "\$channel" ]; then
+                                    mkdir -p "\$channel"
+                                    mv "\$apk" "\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\$channel.apk"
+                                fi
+                            done
+                        """
+                        echo "✅ APK 已按渠道拆分并重命名完成"
+
+                        sendDingTalkMessage(
+                            "Android 打包完成",
+                            "### ✅ Android 打包完成\n- 版本: ${BUILD_NAME} (${ANDROID_BUILD_NUMBER})\n- 产物路径: [smb://10.200.35.17](smb://10.200.35.17)"
+                        )
                     }
                 }
             }
         }
-
     }
 
     post {
@@ -266,7 +256,7 @@ pipeline {
             script {
                 sendDingTalkMessage(
                     "打包失败",
-                    "❌ 构建失败 ⚠️\niOS: ${BUILD_NAME}(${IOS_BUILD_NUMBER})\nAndroid 渠道: ${ANDROID_CHANNELS} 版本: ${BUILD_NAME}(${ANDROID_BUILD_NUMBER})"
+                    "❌ 构建失败 ⚠️\n版本: ${BUILD_NAME} (iOS: ${IOS_BUILD_NUMBER}, Android: ${ANDROID_BUILD_NUMBER})"
                 )
             }
         }
