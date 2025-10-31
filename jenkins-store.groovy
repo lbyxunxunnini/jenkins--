@@ -166,7 +166,7 @@ pipeline {
                                 fvm flutter build apk \
                                     --flavor production \
                                     --release \
-                                    --dart-define-from-file="\${DART_DEFINE_FILE}" \
+                                    --dart-define-from-file="\\\${DART_DEFINE_FILE}" \
                                     --dart-define=WATERMARK=false \
                                     --dart-define=DEV_CONFIG=false \
                                     --build-name="${BUILD_NAME}" \
@@ -184,7 +184,7 @@ pipeline {
                             error("❌ 未找到 APK 文件: ${builtApk}")
                         }
 
-                        sh "echo '渠道文件内容 (Shell):' && cat ${CHANNEL_FILE}"
+                        sh "echo '渠道文件内容:' && cat ${CHANNEL_FILE}"
 
                         if (env.PROTECT_APK == "true") {
                             echo "🔒 开始加固 APK"
@@ -212,15 +212,19 @@ pipeline {
                             sh "cp -v ${builtApk} ${APK_OUTPUT_PATH}/app-production-release.apk"
                         }
 
-                        // ---------- 压缩 + 解压 ----------
-                        echo "📦 打包 APK 输出目录为 zip 并解压到 sign_apk..."
+                        // ---------- 压缩并解压 ----------
+                        echo "📦 打包 APK 输出目录为 zip 并解压..."
                         sh """
                             cd ${APK_OUTPUT_PATH}
-                            zip_file=\\\$(ls -t *.zip | head -n1)
-                            echo "📦 解压文件: \\\$zip_file 到 sign_apk"
-                            rm -rf sign_apk
-                            mkdir -p sign_apk
-                            unzip -q "\\\$zip_file" -d sign_apk
+                            latest_zip=\\\\\\$(ls -t *.zip 2>/dev/null | head -n1 || echo "")
+                            if [ -z "\\\\\\$latest_zip" ]; then
+                                echo "⚠️ 未找到 zip 文件，跳过解压"
+                            else
+                                echo "📦 解压文件: \\\\\\$latest_zip 到 sign_apk"
+                                rm -rf sign_apk
+                                mkdir -p sign_apk
+                                unzip -q "\\\\\\$latest_zip" -d sign_apk
+                            fi
                         """
                         echo "✅ zip 解压完成，产物文件夹命名为 sign_apk"
 
@@ -229,11 +233,11 @@ pipeline {
                         sh """
                             cd ${APK_OUTPUT_PATH}/sign_apk
                             for apk in *.apk; do
-                                channel=\\\$(echo "\\\$apk" | sed -n 's/.*_sec_\\([a-zA-Z0-9_-]*\\)_sign\\.apk/\\1/p')
-                                if [ -n "\\\$channel" ]; then
-                                    mkdir -p "\\\$channel"
-                                    mv "\\\$apk" "\\\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\\\$channel.apk"
-                                    echo "✅ \\\$apk -> \\\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\\\$channel.apk"
+                                channel=\\\\\\$(echo "\\\\\\$apk" | sed -n 's/.*_sec_\\([a-zA-Z0-9_-]*\\)_sign\\.apk/\\1/p')
+                                if [ -n "\\\\\\$channel" ]; then
+                                    mkdir -p "\\\\\\$channel"
+                                    mv "\\\\\\$apk" "\\\\\\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\\\\\\$channel.apk"
+                                    echo "✅ \\\\\\$apk -> \\\\\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\\\\\$channel.apk"
                                 fi
                             done
                         """
@@ -242,6 +246,7 @@ pipeline {
                 }
             }
         }
+
 
     }
 
