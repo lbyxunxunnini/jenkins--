@@ -8,7 +8,7 @@ pipeline {
         ANDROID_BUILD_NUMBER   = "${env.ANDROID_BUILD_NUMBER ?: '1'}"
 
         // ===================== 路径与配置 =====================
-        EXPORT_PATH            = "../pack_store"
+        EXPORT_PATH            = "${WORKSPACE}//pack_store"
         EXPORT_OPTIONS_PLIST_PATH = "${EXPORT_PATH}/export_options_appStore.plist"
         DART_DEFINE_FILE       = "${EXPORT_PATH}/prod.env"
         OUTPUT_DIR             = "/Users/agi00107/Desktop/outpackage/market_release"
