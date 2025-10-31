@@ -222,9 +222,11 @@ pipeline {
                         echo "📦 打包 APK 输出目录为 zip 并解压..."
                         sh """
                             cd ${APK_OUTPUT_PATH}
-                            zip -r app_package.zip .  # 压缩当前 APK 输出目录所有文件
-                            rm -rf sign_apk           # 删除旧的 sign_apk 文件夹（如果存在）
-                            unzip -q app_package.zip -d sign_apk
+                            zip_file=\$(ls -t *.zip | head -n1)
+                            echo "📦 解压文件: \$zip_file 到 sign_apk"
+                            rm -rf sign_apk
+                            mkdir -p sign_apk
+                            unzip -q "$zip_file" -d sign_apk
                         """
                         echo "✅ zip 解压完成，产物文件夹命名为 sign_apk"
 
@@ -233,10 +235,11 @@ pipeline {
                         sh """
                             cd ${APK_OUTPUT_PATH}/sign_apk
                             for apk in *.apk; do
-                                channel=\$(echo \$apk | sed -n 's/.*_sec_\\(.*\\)_sign\\.apk/\\1/p')
-                                if [ -n "\$channel" ]; then
-                                    mkdir -p "\$channel"
-                                    mv "\$apk" "\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\$channel.apk"
+                                channel=$(echo "$apk" | sed -n 's/.*_sec_\([a-zA-Z0-9_-]*\)_sign\.apk/\1/p')
+                                if [ -n "$channel" ]; then
+                                    mkdir -p "$channel"
+                                    mv "$apk" "$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-${channel}.apk"
+                                    echo "✅ $apk -> $channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-${channel}.apk"
                                 fi
                             done
                         """
