@@ -235,11 +235,11 @@ pipeline {
                         sh """
                             cd ${APK_OUTPUT_PATH}/sign_apk
                             for apk in *.apk; do
-                                channel=$(echo "$apk" | sed -n 's/.*_sec_\([a-zA-Z0-9_-]*\)_sign\.apk/\1/p')
-                                if [ -n "$channel" ]; then
-                                    mkdir -p "$channel"
-                                    mv "$apk" "$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-${channel}.apk"
-                                    echo "✅ $apk -> $channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-${channel}.apk"
+                                channel=\\$(echo "\\$apk" | sed -n 's/.*_sec_\\([a-zA-Z0-9_-]*\\)_sign\\.apk/\\1/p')
+                                if [ -n "\\$channel" ]; then
+                                    mkdir -p "\\$channel"
+                                    mv "\\$apk" "\\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\\$channel.apk"
+                                    echo "✅ \\$apk -> \\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\\$channel.apk"
                                 fi
                             done
                         """
