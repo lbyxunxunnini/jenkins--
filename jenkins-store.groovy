@@ -158,9 +158,9 @@ pipeline {
                             script: """
                                 set -e
                                 if sed --version >/dev/null 2>&1; then
-                                  sed -i 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
+                                sed -i 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
                                 else
-                                  sed -i '' 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
+                                sed -i '' 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
                                 fi
 
                                 fvm flutter build apk \
@@ -176,10 +176,6 @@ pipeline {
                         )
 
                         if (buildResult != 0) {
-                            sendDingTalkMessage(
-                                "Android 构建失败",
-                                "### ❌ Android 构建失败\n- 版本: ${BUILD_NAME} (${ANDROID_BUILD_NUMBER})"
-                            )
                             error("❌ APK 构建失败")
                         }
 
@@ -187,7 +183,9 @@ pipeline {
                         if (!fileExists(builtApk)) {
                             error("❌ 未找到 APK 文件: ${builtApk}")
                         }
+
                         sh "echo '渠道文件内容 (Shell):' && cat ${CHANNEL_FILE}"
+
                         if (env.PROTECT_APK == "true") {
                             echo "🔒 开始加固 APK"
                             def protectResult = sh(
@@ -206,10 +204,6 @@ pipeline {
                             )
 
                             if (protectResult != 0) {
-                                sendDingTalkMessage(
-                                    "Android 加固失败",
-                                    "### ❌ Android APK 加固失败\n- 版本: ${BUILD_NAME} (${ANDROID_BUILD_NUMBER})"
-                                )
                                 error("❌ APK 加固失败")
                             }
                             echo "✅ APK 加固成功"
@@ -218,43 +212,37 @@ pipeline {
                             sh "cp -v ${builtApk} ${APK_OUTPUT_PATH}/app-production-release.apk"
                         }
 
-                        // ---------- 4️⃣ 压缩并解压 ----------
-                        echo "📦 打包 APK 输出目录为 zip 并解压..."
+                        // ---------- 压缩 + 解压 ----------
+                        echo "📦 打包 APK 输出目录为 zip 并解压到 sign_apk..."
                         sh """
                             cd ${APK_OUTPUT_PATH}
-                            zip_file=\$(ls -t *.zip | head -n1)
-                            echo "📦 解压文件: \$zip_file 到 sign_apk"
+                            zip_file=\\\$(ls -t *.zip | head -n1)
+                            echo "📦 解压文件: \\\$zip_file 到 sign_apk"
                             rm -rf sign_apk
                             mkdir -p sign_apk
-                            unzip -q "$zip_file" -d sign_apk
+                            unzip -q "\\\$zip_file" -d sign_apk
                         """
                         echo "✅ zip 解压完成，产物文件夹命名为 sign_apk"
 
-                        // ---------- 5️⃣ 按渠道拆分并重命名 ----------
+                        // ---------- 按渠道拆分并重命名 ----------
                         echo "📂 根据 APK 名称拆分渠道文件夹并重命名..."
                         sh """
-                            bash -c '
-                            cd "${APK_OUTPUT_PATH}/sign_apk"
+                            cd ${APK_OUTPUT_PATH}/sign_apk
                             for apk in *.apk; do
-                                channel=\$(echo "\$apk" | sed -n "s/.*_sec_\\([a-zA-Z0-9_-]*\\)_sign\\.apk/\\1/p")
-                                if [ -n "\$channel" ]; then
-                                    mkdir -p "\$channel"
-                                    mv "\$apk" "\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\$channel.apk"
-                                    echo "✅ \$apk -> \$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\$channel.apk"
+                                channel=\\\$(echo "\\\$apk" | sed -n 's/.*_sec_\\([a-zA-Z0-9_-]*\\)_sign\\.apk/\\1/p')
+                                if [ -n "\\\$channel" ]; then
+                                    mkdir -p "\\\$channel"
+                                    mv "\\\$apk" "\\\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\\\$channel.apk"
+                                    echo "✅ \\\$apk -> \\\$channel/yinchao-v${BUILD_NAME}-${ANDROID_BUILD_NUMBER}-\\\$channel.apk"
                                 fi
                             done
-                            '
                         """
                         echo "✅ APK 已按渠道拆分并重命名完成"
-
-                        sendDingTalkMessage(
-                            "Android 打包完成",
-                            "### ✅ Android 打包完成\n- 版本: ${BUILD_NAME} (${ANDROID_BUILD_NUMBER})\n- 产物路径: [smb://10.200.35.17](smb://10.200.35.17)"
-                        )
                     }
                 }
             }
         }
+
     }
 
     post {
