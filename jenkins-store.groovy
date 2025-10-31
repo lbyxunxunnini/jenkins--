@@ -220,9 +220,9 @@ pipeline {
             steps {
                 dir('facesong_flutter') {
                     script {
-                        echo "📂 调用 unzip.sh 脚本处理 APK"
+                        echo "📂 调用 解压 脚本处理 APK"
                         sh """
-                            sh "${EXPORT_PATH}/unzip.sh" "${APK_OUTPUT_PATH}" "${BUILD_NAME}" "${ANDROID_BUILD_NUMBER}"
+                            sh ${UNZIP_PATH} ${APK_OUTPUT_PATH} ${BUILD_NAME} ${ANDROID_BUILD_NUMBER}
                         """
                         echo "✅ APK 已按渠道拆分并重命名完成"
                     }
