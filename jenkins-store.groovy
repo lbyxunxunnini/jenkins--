@@ -26,7 +26,8 @@ pipeline {
         CHANNEL_FILE           = "${EXPORT_PATH}/channelexname.txt" 
 
         // ===================== 钉钉告警 =====================
-        DINGTALK_WEBHOOK       = "https://oapi.dingtalk.com/robot/send?access_token=057c702cdb1896282659cd07439846fd07ec052cf599883260c08f289f2cd89f"
+        DINGTALK_WEBHOOK       = "https://oapi.dingtalk.com/robot/send?access_token=ae7a01ed25859f3e9f995717eacbb5bd67dde43cbcb889c27a5868aad347016a"
+        // DINGTALK_WEBHOOK       = "https://oapi.dingtalk.com/robot/send?access_token=057c702cdb1896282659cd07439846fd07ec052cf599883260c08f289f2cd89f"
     }
 
     stages {
@@ -186,7 +187,7 @@ pipeline {
                         if (!fileExists(builtApk)) {
                             error("❌ 未找到 APK 文件: ${builtApk}")
                         }
-
+                        sh "echo '渠道文件内容 (Shell):' && cat ${CHANNEL_FILE}"
                         if (env.PROTECT_APK == "true") {
                             echo "🔒 开始加固 APK"
                             def protectResult = sh(
