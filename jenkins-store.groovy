@@ -218,15 +218,18 @@ pipeline {
         stage('压缩 & 解压 & 拆分渠道 APK') {
             when { expression { return env.BUILD_ANDROID == "true" } }
             steps {
-                script {
-                    echo "📂 调用 unzip.sh 脚本处理 APK"
-                    sh """
-                        sh "${UNZIP_PATH}" "${APK_OUTPUT_PATH}" "${BUILD_NAME}" "${ANDROID_BUILD_NUMBER}"
-                    """
-                    echo "✅ APK 已按渠道拆分并重命名完成"
+                dir('facesong_flutter') {
+                    script {
+                        echo "📂 调用 unzip.sh 脚本处理 APK"
+                        sh """
+                            sh "${EXPORT_PATH}/unzip.sh" "${APK_OUTPUT_PATH}" "${BUILD_NAME}" "${ANDROID_BUILD_NUMBER}"
+                        """
+                        echo "✅ APK 已按渠道拆分并重命名完成"
+                    }
                 }
             }
         }
+
 
 
 
