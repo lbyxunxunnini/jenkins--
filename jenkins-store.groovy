@@ -221,8 +221,7 @@ pipeline {
                 script {
                     echo "📂 调用 unzip.sh 脚本处理 APK"
                     sh """
-                        chmod +x "${UNZIP_PATH}"
-                        "${UNZIP_PATH}" "${APK_OUTPUT_PATH}" "${BUILD_NAME}" "${ANDROID_BUILD_NUMBER}"
+                        sh "${UNZIP_PATH}" "${APK_OUTPUT_PATH}" "${BUILD_NAME}" "${ANDROID_BUILD_NUMBER}"
                     """
                     echo "✅ APK 已按渠道拆分并重命名完成"
                 }
