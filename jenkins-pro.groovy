@@ -105,13 +105,13 @@ pipeline {
                 dir('facesong_flutter') {
                     echo "🍎 [3/6] 构建 iOS IPA"
                     sh '''
-                        fvm flutter build ipa \
+                        sh build.sh ipa \
+                            --channel "$IOS_CHANNEL" \
                             --flavor production \
                             --release \
                             --dart-define-from-file="$DART_DEFINE_FILE" \
                             --dart-define=WATERMARK=true \
                             --dart-define=DEV_CONFIG=true \
-                            --dart-define=DISTRIBUTE_CHANNEL="$IOS_CHANNEL" \
                             --export-options-plist="$EXPORT_OPTIONS" \
                             --build-name="$BUILD_NAME" \
                             --build-number="$BUILD_NUMBER"
@@ -220,14 +220,14 @@ pipeline {
                     echo "🤖 [4/6] 构建 Android APK"
                     sh '''
                         sed -i '' 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
-                        fvm flutter build apk \
+                        sh build.sh ipa \
+                            --channel "$AN_CHANNEL" \
                             --flavor production \
                             --release \
                             --target-platform android-arm64 \
                             --dart-define-from-file="$DART_DEFINE_FILE" \
                             --dart-define=WATERMARK=true \
                             --dart-define=DEV_CONFIG=true \
-                            --dart-define=DISTRIBUTE_CHANNEL="$AN_CHANNEL" \
                             --build-name="$BUILD_NAME" \
                             --build-number="$BUILD_NUMBER"
                     '''
