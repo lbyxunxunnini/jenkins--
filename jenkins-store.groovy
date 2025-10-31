@@ -31,189 +31,189 @@ pipeline {
     }
 
     stages {
-        stage('初始化仓库') {
-            steps {
-                dir('facesong_flutter') {
-                    echo "🚀 [1/7] 初始化 Git 仓库..."
-                    script {
-                        def gitDirExists = fileExists('.git')
-                        if (!gitDirExists) {
-                            deleteDir()
-                            sh "git clone ${env.GIT_REPO} . && git checkout ${env.GIT_REF}"
-                        } else {
-                            sh "git reset --hard && git clean -fd"
-                        }
+        // stage('初始化仓库') {
+        //     steps {
+        //         dir('facesong_flutter') {
+        //             echo "🚀 [1/7] 初始化 Git 仓库..."
+        //             script {
+        //                 def gitDirExists = fileExists('.git')
+        //                 if (!gitDirExists) {
+        //                     deleteDir()
+        //                     sh "git clone ${env.GIT_REPO} . && git checkout ${env.GIT_REF}"
+        //                 } else {
+        //                     sh "git reset --hard && git clean -fd"
+        //                 }
 
-                        checkout([$class: 'GitSCM',
-                            branches: [[name: "${env.GIT_REF}"]],
-                            doGenerateSubmoduleConfigurations: false,
-                            extensions: [[$class: 'CleanBeforeCheckout']],
-                            userRemoteConfigs: [[
-                                url: env.GIT_REPO,
-                                credentialsId: env.GIT_CREDENTIAL_ID
-                            ]]
-                        ])
-                        sh "git log -5 --pretty=format:'%h %an %ad %s' --date=short"
-                    }
-                }
-            }
-        }
+        //                 checkout([$class: 'GitSCM',
+        //                     branches: [[name: "${env.GIT_REF}"]],
+        //                     doGenerateSubmoduleConfigurations: false,
+        //                     extensions: [[$class: 'CleanBeforeCheckout']],
+        //                     userRemoteConfigs: [[
+        //                         url: env.GIT_REPO,
+        //                         credentialsId: env.GIT_CREDENTIAL_ID
+        //                     ]]
+        //                 ])
+        //                 sh "git log -5 --pretty=format:'%h %an %ad %s' --date=short"
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('确认版本号') {
-            steps {
-                echo "🔢 [2/7] 版本号确认：BUILD_NAME=${BUILD_NAME}, IOS_BUILD_NUMBER=${IOS_BUILD_NUMBER}, ANDROID_BUILD_NUMBER=${ANDROID_BUILD_NUMBER}"
-            }
-        }
+        // stage('确认版本号') {
+        //     steps {
+        //         echo "🔢 [2/7] 版本号确认：BUILD_NAME=${BUILD_NAME}, IOS_BUILD_NUMBER=${IOS_BUILD_NUMBER}, ANDROID_BUILD_NUMBER=${ANDROID_BUILD_NUMBER}"
+        //     }
+        // }
 
-        stage('Flutter 初始化') {
-            steps {
-                dir('facesong_flutter') {
-                    sh """
-                        set -e
-                        rm -f pubspec.lock ios/Podfile.lock
-                        fvm flutter clean
-                        export PUB_HOSTED_URL=https://pub.flutter-io.cn
-                        fvm flutter pub get
-                    """
-                }
-            }
-        }
+        // stage('Flutter 初始化') {
+        //     steps {
+        //         dir('facesong_flutter') {
+        //             sh """
+        //                 set -e
+        //                 rm -f pubspec.lock ios/Podfile.lock
+        //                 fvm flutter clean
+        //                 export PUB_HOSTED_URL=https://pub.flutter-io.cn
+        //                 fvm flutter pub get
+        //             """
+        //         }
+        //     }
+        // }
 
-        stage('构建 iOS IPA') {
-            when { expression { return env.BUILD_IOS == "true" } }
-            steps {
-                dir('facesong_flutter') {
-                    script {
-                        def iosBuildResult = sh(
-                            script: """
-                                set -e
-                                sh build.sh ipa \
-                                    --channel AppStore \
-                                    --flavor production \
-                                    --export-options-plist=${EXPORT_OPTIONS_PLIST_PATH} \
-                                    --dart-define-from-file=\${DART_DEFINE_FILE} \
-                                    --dart-define=WATERMARK=false \
-                                    --dart-define=DEV_CONFIG=false \
-                                    --build-name ${BUILD_NAME} \
-                                    --build-number ${IOS_BUILD_NUMBER}
-                            """,
-                            returnStatus: true
-                        )
+        // stage('构建 iOS IPA') {
+        //     when { expression { return env.BUILD_IOS == "true" } }
+        //     steps {
+        //         dir('facesong_flutter') {
+        //             script {
+        //                 def iosBuildResult = sh(
+        //                     script: """
+        //                         set -e
+        //                         sh build.sh ipa \
+        //                             --channel AppStore \
+        //                             --flavor production \
+        //                             --export-options-plist=${EXPORT_OPTIONS_PLIST_PATH} \
+        //                             --dart-define-from-file=\${DART_DEFINE_FILE} \
+        //                             --dart-define=WATERMARK=false \
+        //                             --dart-define=DEV_CONFIG=false \
+        //                             --build-name ${BUILD_NAME} \
+        //                             --build-number ${IOS_BUILD_NUMBER}
+        //                     """,
+        //                     returnStatus: true
+        //                 )
 
-                        if (iosBuildResult == 0) {
-                            sendDingTalkMessage(
-                                "iOS 打包完成",
-                                "### ✅ iOS 打包完成\n- 版本: ${BUILD_NAME} (${IOS_BUILD_NUMBER})\n- 产物路径: [smb://10.200.35.17](smb://10.200.35.17)"
-                            )
-                        } else {
-                            sendDingTalkMessage(
-                                "iOS 打包失败",
-                                "### ❌ iOS 打包失败\n- 版本: ${BUILD_NAME} (${IOS_BUILD_NUMBER})"
-                            )
-                            error("iOS 构建失败")
-                        }
-                    }
-                }
-            }
-        }
+        //                 if (iosBuildResult == 0) {
+        //                     sendDingTalkMessage(
+        //                         "iOS 打包完成",
+        //                         "### ✅ iOS 打包完成\n- 版本: ${BUILD_NAME} (${IOS_BUILD_NUMBER})\n- 产物路径: [smb://10.200.35.17](smb://10.200.35.17)"
+        //                     )
+        //                 } else {
+        //                     sendDingTalkMessage(
+        //                         "iOS 打包失败",
+        //                         "### ❌ iOS 打包失败\n- 版本: ${BUILD_NAME} (${IOS_BUILD_NUMBER})"
+        //                     )
+        //                     error("iOS 构建失败")
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('复制 xcarchive') {
-            when { expression { return env.BUILD_IOS == "true" } }
-            steps {
-                dir('facesong_flutter') {
-                    script {
-                        def sourceDir = "build/ios/archive/Runner.xcarchive"
-                        def targetDir = "${ARCHIVE_OUTPUT_PATH}/Runner.xcarchive"
-                        sh """
-                            set -e
-                            mkdir -p "${ARCHIVE_OUTPUT_PATH}"
-                            if [ -d "${sourceDir}" ]; then
-                                rm -rf "${targetDir}"
-                                cp -R "${sourceDir}" "${targetDir}"
-                            else
-                                exit 1
-                            fi
-                        """
-                    }
-                }
-            }
-        }
+        // stage('复制 xcarchive') {
+        //     when { expression { return env.BUILD_IOS == "true" } }
+        //     steps {
+        //         dir('facesong_flutter') {
+        //             script {
+        //                 def sourceDir = "build/ios/archive/Runner.xcarchive"
+        //                 def targetDir = "${ARCHIVE_OUTPUT_PATH}/Runner.xcarchive"
+        //                 sh """
+        //                     set -e
+        //                     mkdir -p "${ARCHIVE_OUTPUT_PATH}"
+        //                     if [ -d "${sourceDir}" ]; then
+        //                         rm -rf "${targetDir}"
+        //                         cp -R "${sourceDir}" "${targetDir}"
+        //                     else
+        //                         exit 1
+        //                     fi
+        //                 """
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('构建 & 加固 Android APK') {
-            when { expression { return env.BUILD_ANDROID == "true" } }
-            steps {
-                dir('facesong_flutter') {
-                    script {
-                        sh "mkdir -p ${APK_OUTPUT_PATH}"
+        // stage('构建 & 加固 Android APK') {
+        //     when { expression { return env.BUILD_ANDROID == "true" } }
+        //     steps {
+        //         dir('facesong_flutter') {
+        //             script {
+        //                 sh "mkdir -p ${APK_OUTPUT_PATH}"
 
-                        sh """
-                            set -e
-                            cp "${EXPORT_PATH}/key.properties" android/app/key.properties
-                            cp "${EXPORT_PATH}/release.keystore" android/app/release.keystore
-                        """
+        //                 sh """
+        //                     set -e
+        //                     cp "${EXPORT_PATH}/key.properties" android/app/key.properties
+        //                     cp "${EXPORT_PATH}/release.keystore" android/app/release.keystore
+        //                 """
 
-                        echo "🟢 开始构建 APK"
+        //                 echo "🟢 开始构建 APK"
 
-                        def buildResult = sh(
-                            script: """
-                                set -e
-                                if sed --version >/dev/null 2>&1; then
-                                    sed -i 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
-                                else
-                                    sed -i '' 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
-                                fi
+        //                 def buildResult = sh(
+        //                     script: """
+        //                         set -e
+        //                         if sed --version >/dev/null 2>&1; then
+        //                             sed -i 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
+        //                         else
+        //                             sed -i '' 's/minSdk = flutter\\.minSdkVersion/minSdk = 24/' android/app/build.gradle
+        //                         fi
 
-                                fvm flutter build apk \
-                                    --flavor production \
-                                    --release \
-                                    --dart-define-from-file="\${DART_DEFINE_FILE}" \
-                                    --dart-define=WATERMARK=false \
-                                    --dart-define=DEV_CONFIG=false \
-                                    --build-name="${BUILD_NAME}" \
-                                    --build-number="${ANDROID_BUILD_NUMBER}"
-                            """,
-                            returnStatus: true
-                        )
+        //                         fvm flutter build apk \
+        //                             --flavor production \
+        //                             --release \
+        //                             --dart-define-from-file="\${DART_DEFINE_FILE}" \
+        //                             --dart-define=WATERMARK=false \
+        //                             --dart-define=DEV_CONFIG=false \
+        //                             --build-name="${BUILD_NAME}" \
+        //                             --build-number="${ANDROID_BUILD_NUMBER}"
+        //                     """,
+        //                     returnStatus: true
+        //                 )
 
-                        if (buildResult != 0) {
-                            error("❌ APK 构建失败")
-                        }
+        //                 if (buildResult != 0) {
+        //                     error("❌ APK 构建失败")
+        //                 }
 
-                        def builtApk = "build/app/outputs/flutter-apk/app-production-release.apk"
-                        if (!fileExists(builtApk)) {
-                            error("❌ 未找到 APK 文件: ${builtApk}")
-                        }
+        //                 def builtApk = "build/app/outputs/flutter-apk/app-production-release.apk"
+        //                 if (!fileExists(builtApk)) {
+        //                     error("❌ 未找到 APK 文件: ${builtApk}")
+        //                 }
 
-                        // APK 加固
-                        if (env.PROTECT_APK == "true") {
-                            echo "🔒 开始加固 APK"
-                            def protectResult = sh(
-                                script: """
-                                    set -e
-                                    java -jar "${SECAPI_JAR_PATH}" \
-                                        -i 10.200.18.111:8000 \
-                                        -u zyljsh \
-                                        -a 3e41fc10-8c1b-44c2-9c1c-d3a99b1330ca \
-                                        -c ba2749da-6086-41cd-b801-ee75727c4bdd \
-                                        -f 0 -t 100000 \
-                                        -p "${builtApk}" -d "${APK_OUTPUT_PATH}" \
-                                        --action ud --ks 1 -l "${CHANNEL_FILE}"
-                                """,
-                                returnStatus: true
-                            )
+        //                 // APK 加固
+        //                 if (env.PROTECT_APK == "true") {
+        //                     echo "🔒 开始加固 APK"
+        //                     def protectResult = sh(
+        //                         script: """
+        //                             set -e
+        //                             java -jar "${SECAPI_JAR_PATH}" \
+        //                                 -i 10.200.18.111:8000 \
+        //                                 -u zyljsh \
+        //                                 -a 3e41fc10-8c1b-44c2-9c1c-d3a99b1330ca \
+        //                                 -c ba2749da-6086-41cd-b801-ee75727c4bdd \
+        //                                 -f 0 -t 100000 \
+        //                                 -p "${builtApk}" -d "${APK_OUTPUT_PATH}" \
+        //                                 --action ud --ks 1 -l "${CHANNEL_FILE}"
+        //                         """,
+        //                         returnStatus: true
+        //                     )
 
-                            if (protectResult != 0) {
-                                error("❌ APK 加固失败")
-                            }
-                            echo "✅ APK 加固成功"
-                        } else {
-                            echo "⚙️ 未开启加固，直接复制构建产物"
-                            sh "cp -v ${builtApk} ${APK_OUTPUT_PATH}/app-production-release.apk"
-                        }
-                    }
-                }
-            }
-        }
+        //                     if (protectResult != 0) {
+        //                         error("❌ APK 加固失败")
+        //                     }
+        //                     echo "✅ APK 加固成功"
+        //                 } else {
+        //                     echo "⚙️ 未开启加固，直接复制构建产物"
+        //                     sh "cp -v ${builtApk} ${APK_OUTPUT_PATH}/app-production-release.apk"
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('压缩 & 解压 & 拆分渠道 APK') {
             when { expression { return env.BUILD_ANDROID == "true" } }
