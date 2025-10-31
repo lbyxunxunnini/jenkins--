@@ -23,7 +23,7 @@ pipeline {
         // ===================== APK 加固配置 =====================
         PROTECT_APK            = "${env.PROTECT_APK ?: 'true'}"
         SECAPI_JAR_PATH        = "${EXPORT_PATH}/secapi-4.1.5-SNAPSHOT.jar"
-        CHANNEL_FILE           = "${EXPORT_PATH}/channelexname.txt" 
+        CHANNEL_FILE           = "${EXPORT_PATH}/channelname.txt" 
 
         // ===================== 钉钉告警 =====================
         DINGTALK_WEBHOOK       = "https://oapi.dingtalk.com/robot/send?access_token=ae7a01ed25859f3e9f995717eacbb5bd67dde43cbcb889c27a5868aad347016a"
