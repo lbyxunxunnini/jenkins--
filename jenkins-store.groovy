@@ -25,8 +25,8 @@ pipeline {
         SECAPI_JAR_PATH        = "${EXPORT_PATH}/secapi-4.1.5-SNAPSHOT.jar"
         CHANNEL_FILE           = "${EXPORT_PATH}/channelname.txt" 
         UNZIP_PATH             = "${EXPORT_PATH}/jyzip.sh"
+
         // ===================== 钉钉告警 =====================
-        // DINGTALK_WEBHOOK       = "https://oapi.dingtalk.com/robot/send?access_token=ae7a01ed25859f3e9f995717eacbb5bd67dde43cbcb889c27a5868aad347016a"
         DINGTALK_WEBHOOK       = "https://oapi.dingtalk.com/robot/send?access_token=057c702cdb1896282659cd07439846fd07ec052cf599883260c08f289f2cd89f"
     }
 
@@ -100,15 +100,10 @@ pipeline {
                             returnStatus: true
                         )
 
-                        if (iosBuildResult == 0) {
-                            sendDingTalkMessage(
-                                "iOS 打包完成",
-                                "### ✅ iOS 打包完成\n- 版本: ${BUILD_NAME} (${IOS_BUILD_NUMBER})\n- 产物路径: [smb://10.200.35.17](smb://10.200.35.17)"
-                            )
-                        } else {
+                        if (iosBuildResult != 0) {
                             sendDingTalkMessage(
                                 "iOS 打包失败",
-                                "### ❌ iOS 打包失败\n- 版本: ${BUILD_NAME} (${IOS_BUILD_NUMBER})"
+                                generateMarkdown("iOS", "❌ iOS 构建失败", BUILD_NAME, IOS_BUILD_NUMBER, env.GIT_REF)
                             )
                             error("iOS 构建失败")
                         }
@@ -134,6 +129,9 @@ pipeline {
                                 exit 1
                             fi
                         """
+                        // ✅ iOS 成功通知
+                        def markdownText = generateMarkdown("iOS", "✅ iOS 构建完成", BUILD_NAME, IOS_BUILD_NUMBER, env.GIT_REF)
+                        sendDingTalkMessage("iOS 打包完成", markdownText)
                     }
                 }
             }
@@ -225,24 +223,28 @@ pipeline {
                             sh ${UNZIP_PATH} ${APK_OUTPUT_PATH} ${BUILD_NAME} ${ANDROID_BUILD_NUMBER}
                         """
                         echo "✅ APK 已按渠道拆分并重命名完成"
+
+                        // ✅ Android 成功通知
+                        def markdownText = generateMarkdown("Android", "✅ Android 构建完成", BUILD_NAME, ANDROID_BUILD_NUMBER, env.GIT_REF)
+                        sendDingTalkMessage("Android 打包完成", markdownText)
                     }
                 }
             }
         }
-
-
-
-
-
     }
 
     post {
         failure {
             script {
-                sendDingTalkMessage(
-                    "打包失败",
-                    "❌ 构建失败 ⚠️\n版本: ${BUILD_NAME} (iOS: ${IOS_BUILD_NUMBER}, Android: ${ANDROID_BUILD_NUMBER})"
-                )
+                def markdownText = """
+### ❌ Jenkins 构建失败
+
+- **build_version**：${BUILD_NAME}
+- **build_number**：iOS: ${IOS_BUILD_NUMBER}, Android: ${ANDROID_BUILD_NUMBER}
+- **构建分支**：${env.GIT_REF ?: '未知'}
+- **完成时间**：${new Date().format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone("Asia/Shanghai"))}
+                """.stripIndent()
+                sendDingTalkMessage("构建失败", markdownText)
             }
         }
     }
@@ -262,3 +264,22 @@ def sendDingTalkMessage(String title, String content) {
         }'
     """
 }
+
+// ---------------- Markdown 构建函数 ----------------
+def generateMarkdown(String platform, String resultText, String buildVersion, String buildNumber, String gitRef) {
+    def timeStr = new Date().format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone("Asia/Shanghai"))
+
+    return """
+### 🎉 Jenkins 构建完成（${platform}）
+
+- **产物路径**: [smb://10.200.35.17](smb://10.200.35.17)
+- **build_version**：${buildVersion}
+- **build_number**：${buildNumber}
+- **构建分支**：${gitRef ?: '未知'}
+- **完成时间**：${timeStr}
+
+#### 📦 构建结果
+- ${resultText}
+    """.stripIndent()
+}
+
