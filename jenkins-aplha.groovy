@@ -87,7 +87,6 @@ pipeline {
                         export FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn
                         fvm use "$FLUTTER_VERSION"
                         rm -f ios/Podfile.lock
-                        rm pubspec.lock
                         fvm flutter clean
                         fvm flutter pub get
                         cp "$EXPORT_PATH/key.properties" android/app/key.properties
