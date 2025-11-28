@@ -272,7 +272,7 @@ def generateMarkdown(String platform, String resultText, String buildVersion, St
     return """
 ### 🎉 Jenkins 构建完成（${platform}）
 
-- **产物路径**: [smb://10.200.35.17](smb://10.200.35.17)
+- **产物路径**: [http://10.200.35.17:9999/market_release](http://10.200.35.17:9999/market_release)
 - **build_version**：${buildVersion}
 - **build_number**：${buildNumber}
 - **构建分支**：${gitRef ?: '未知'}
