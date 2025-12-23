@@ -153,7 +153,7 @@ pipeline {
                         }
 
                         env.IOS_BUILDK = json.data.buildKey
-                        env.IOS_QR = "https://www.pgyer.com/app/qrcode/${env.IOS_BUILDK}" // 直接图片
+                        env.IOS_QR = json.data.buildQRCodeURL // 直接图片
                         env.IOS_INSTALL = "https://api.pgyer.com/apiv2/app/install?_api_key=${PGYER_API_KEY}&buildKey=${env.IOS_BUILDK}&buildPassword=${PGYER_PASSWORD}"
                     }
                 }
@@ -285,7 +285,7 @@ pipeline {
                         }
 
                         env.ANDROID_BUILDK = json.data.buildKey
-                        env.ANDROID_QR = "https://www.pgyer.com/app/qrcode/${env.ANDROID_BUILDK}" // 图片
+                        env.ANDROID_QR = json.data.buildQRCodeURL // 图片
                         env.ANDROID_INSTALL = "https://api.pgyer.com/apiv2/app/install?_api_key=${PGYER_API_KEY}&buildKey=${env.ANDROID_BUILDK}&buildPassword=${PGYER_PASSWORD}"
                     }
                 }
