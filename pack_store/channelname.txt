@@ -1,4 +1,4 @@
-﻿#android:name android:value channel_name
+#android:name android:value channel_name
 CHANNEL_ID baidu baidu
 CHANNEL_ID oppo oppo
 CHANNEL_ID vivo vivo
@@ -10,4 +10,4 @@ CHANNEL_ID yinyonghui yinyonghui
 CHANNEL_ID 360 360
 CHANNEL_ID ali ali
 CHANNEL_ID kuaishou kuaishou
-
+CHANNEL_ID huawei huawei
