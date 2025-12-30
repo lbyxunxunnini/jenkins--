@@ -11,3 +11,4 @@ CHANNEL_ID 360 360
 CHANNEL_ID ali ali
 CHANNEL_ID kuaishou kuaishou
 CHANNEL_ID huawei huawei
+CHANNEL_ID nianian nianian
