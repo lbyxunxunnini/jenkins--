@@ -72,7 +72,7 @@ pipeline {
                     echo "✏️ [1.5/6] 修改 iOS/Android 安装名称（不提交）"
                     sh """
                         /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName '${APP_NAME}'" ios/Runner/Info.plist
-                        sed -i '' "/create('production') {/,/}/ s/resValue 'string', 'app_name', '音潮'/resValue 'string', 'app_name', '${APP_NAME}'/" android/app/build.gradle
+                        sed -i '' "/create('production') {/,/}/ s/resValue 'string', 'app_name', '音潮 ALPHA'/resValue 'string', 'app_name', '${APP_NAME}'/" android/app/build.gradle
                     """
                 }
             }
