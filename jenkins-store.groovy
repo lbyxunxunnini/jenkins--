@@ -164,6 +164,7 @@ pipeline {
                                 fvm flutter build apk \
                                     --flavor production \
                                     --release \
+                                    --target-platform android-arm64 \
                                     --dart-define-from-file="\${DART_DEFINE_FILE}" \
                                     --dart-define=WATERMARK=false \
                                     --dart-define=DEV_CONFIG=false \
