@@ -18,7 +18,9 @@ pipeline {
         // 定义环境变量
         GIT_REPO = 'git@codeup.aliyun.com:6710bdc09d3c82efe37b13cc/facesong/facesong_flutter.git'
         GIT_CREDENTIAL_ID = 'git-ssh-key'
-        DINGTALK_WEBHOOK  = "https://oapi.dingtalk.com/robot/send?access_token=0b6aaab68a9a4b2c95826ed0cf6be0fd5d1a7c2e84610f3d20a687f0fc7a2c41"
+        CREDENTIAL_ID = 'git-ssh-key'
+        DINGTALK_WEBHOOK  = "https://oapi.dingtalk.com/robot/send?access_token=ae7a01ed25859f3e9f995717eacbb5bd67dde43cbcb889c27a5868aad347016a"
+        // DINGTALK_WEBHOOK  = "https://oapi.dingtalk.com/robot/send?access_token=0b6aaab68a9a4b2c95826ed0cf6be0fd5d1a7c2e84610f3d20a687f0fc7a2c41"
     }
 
     stages {
@@ -42,6 +44,20 @@ pipeline {
                     ])
                     echo "📄 最近提交日志："
                     sh "git log -5 --pretty=format:'%h %an %ad %s' --date=short"
+                     // ================= 修改：仅保留「提交信息」 =================
+                    script {
+                        env.GIT_LATEST_COMMIT = sh(
+                            script: '''
+                                git fetch origin
+                                git log origin/${GIT_REF#*/} -1 \
+                                --pretty=format:"%s"
+                            ''',
+                            returnStdout: true
+                        ).trim()
+
+                        echo "📌 当前仓库最新提交：${env.GIT_LATEST_COMMIT}"
+                    }
+                    // ============================================================
                 }
             }
         }
@@ -169,6 +185,7 @@ pipeline {
 
 - **构建版本**：${BUILD_NAME} (${BUILD_NUMBER})
 - **构建分支**：${env.GIT_REF ?: '未知'}
+- **最新提交**：${env.GIT_LATEST_COMMIT}
 - **完成时间**：${timeStr}
 
 #### 📦 构建结果
@@ -286,6 +303,7 @@ pipeline {
 
 - **构建版本**：${BUILD_NAME} (${BUILD_NUMBER})
 - **构建分支**：${env.GIT_REF ?: '未知'}
+- **最新提交**：${env.GIT_LATEST_COMMIT}
 - **完成时间**：${timeStr}
 
 #### 📦 构建结果
