@@ -54,6 +54,20 @@ pipeline {
                             ]]
                         ])
                         sh "git log -5 --pretty=format:'%h %an %ad %s' --date=short"
+                        // ================= 修改：仅保留「提交信息」 =================
+                        script {
+                            env.GIT_LATEST_COMMIT = sh(
+                                script: '''
+                                    git fetch origin
+                                    git log origin/${GIT_REF#*/} -1 \
+                                    --pretty=format:"%s"
+                                ''',
+                                returnStdout: true
+                            ).trim()
+
+                            echo "📌 当前仓库最新提交：${env.GIT_LATEST_COMMIT}"
+                        }
+                        // ============================================================
                     }
                 }
             }
@@ -243,6 +257,7 @@ pipeline {
 - **build_version**：${BUILD_NAME}
 - **build_number**：iOS: ${IOS_BUILD_NUMBER}, Android: ${ANDROID_BUILD_NUMBER}
 - **构建分支**：${env.GIT_REF ?: '未知'}
+- **最新提交**：${env.GIT_LATEST_COMMIT}
 - **完成时间**：${new Date().format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone("Asia/Shanghai"))}
                 """.stripIndent()
                 sendDingTalkMessage("构建失败", markdownText)
@@ -277,6 +292,7 @@ def generateMarkdown(String platform, String resultText, String buildVersion, St
 - **build_version**：${buildVersion}
 - **build_number**：${buildNumber}
 - **构建分支**：${gitRef ?: '未知'}
+- **最新提交**：${env.GIT_LATEST_COMMIT}
 - **完成时间**：${timeStr}
 
 #### 📦 构建结果
