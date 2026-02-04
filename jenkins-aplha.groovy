@@ -20,8 +20,8 @@ pipeline {
         // 定义环境变量
         GIT_REPO = 'git@codeup.aliyun.com:6710bdc09d3c82efe37b13cc/facesong/facesong_flutter.git'
         GIT_CREDENTIAL_ID = 'git-ssh-key'
-        DINGTALK_WEBHOOK  = "https://oapi.dingtalk.com/robot/send?access_token=ae7a01ed25859f3e9f995717eacbb5bd67dde43cbcb889c27a5868aad347016a"
-        // DINGTALK_WEBHOOK  = "https://oapi.dingtalk.com/robot/send?access_token=0b6aaab68a9a4b2c95826ed0cf6be0fd5d1a7c2e84610f3d20a687f0fc7a2c41"
+        // DINGTALK_WEBHOOK  = "https://oapi.dingtalk.com/robot/send?access_token=ae7a01ed25859f3e9f995717eacbb5bd67dde43cbcb889c27a5868aad347016a"
+        DINGTALK_WEBHOOK  = "https://oapi.dingtalk.com/robot/send?access_token=0b6aaab68a9a4b2c95826ed0cf6be0fd5d1a7c2e84610f3d20a687f0fc7a2c41"
     }
 
     stages {
