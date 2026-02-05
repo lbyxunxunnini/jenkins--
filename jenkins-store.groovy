@@ -288,9 +288,10 @@ pipeline {
                     echo "📦 开始压缩整个 ${BUILD_NAME} 文件夹..."
                     sh """
                         cd ${OUTPUT_DIR}
-                        zip -r ${BUILD_NAME}.zip ${BUILD_NAME}
+                        zip -rq ${BUILD_NAME}.zip ${BUILD_NAME}
                     """
                     echo "✅ 压缩完成: ${zipFile}"
+                    sendDingTalkMessage("打包产物压缩完成:",${zipFile})
                 }
             }
 }
