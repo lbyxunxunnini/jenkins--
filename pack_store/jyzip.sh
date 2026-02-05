@@ -24,6 +24,10 @@ mkdir -p sign_apk
 # 解压 zip 到 sign_apk
 unzip -q "$zip_file" -d sign_apk
 
+
+# 删除原始 zip 压缩包
+echo "🗑 删除原始压缩包: $zip_file"
+rm -f "$zip_file"
 # 进入 sign_apk 目录
 cd sign_apk
 

@@ -279,6 +279,22 @@ pipeline {
                 }
             }
         }
+
+        stage('压缩最终产物') {
+            steps {
+                script {
+                    def buildDir = "${OUTPUT_DIR}/${BUILD_NAME}"       
+                    def zipFile = "${OUTPUT_DIR}/${BUILD_NAME}.zip"   
+                    echo "📦 开始压缩整个 ${BUILD_NAME} 文件夹..."
+                    sh """
+                        cd ${OUTPUT_DIR}
+                        zip -r ${BUILD_NAME}.zip ${BUILD_NAME}
+                    """
+                    echo "✅ 压缩完成: ${zipFile}"
+                }
+            }
+}
+
     }
 
     post {
