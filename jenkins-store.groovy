@@ -26,6 +26,9 @@ pipeline {
         CHANNEL_FILE           = "${EXPORT_PATH}/channelname.txt" 
         UNZIP_PATH             = "${EXPORT_PATH}/jyzip.sh"
 
+        // ===================== Android 渠道配置 =====================
+        ANDROID_CHANNELS       = "${env.ANDROID_CHANNELS ?: ''}"
+
         // ===================== 钉钉告警 =====================
         DINGTALK_WEBHOOK       = "https://oapi.dingtalk.com/robot/send?access_token=057c702cdb1896282659cd07439846fd07ec052cf599883260c08f289f2cd89f"
     }
@@ -146,6 +149,36 @@ pipeline {
                         // ✅ iOS 成功通知
                         def markdownText = generateMarkdown("iOS", "✅ iOS 构建完成", BUILD_NAME, IOS_BUILD_NUMBER, env.GIT_REF)
                         sendDingTalkMessage("iOS 打包完成", markdownText)
+                    }
+                }
+            }
+        }
+
+        // ===================== 新增 Stage：生成 Android 渠道文件 =====================
+        stage('生成 Android 渠道文件') {
+            when { 
+                expression { 
+                    return env.BUILD_ANDROID == "true" && env.ANDROID_CHANNELS?.trim()
+                } 
+            }
+            steps {
+                dir('facesong_flutter') {
+                    script {
+                        sh """
+                            set -e
+                            mkdir -p "${EXPORT_PATH}"
+
+                            echo "#android:name android:value channel_name" > "${CHANNEL_FILE}"
+
+                            IFS=',' read -ra CHANNEL_ARRAY <<< "${ANDROID_CHANNELS}"
+                            for channel in "\${CHANNEL_ARRAY[@]}"; do
+                                channel=\$(echo "\$channel" | xargs)
+                                echo "CHANNEL_ID \$channel \$channel" >> "${CHANNEL_FILE}"
+                            done
+
+                            echo "📄 channelname.txt 内容如下："
+                            cat "${CHANNEL_FILE}"
+                        """
                     }
                 }
             }
@@ -299,4 +332,3 @@ def generateMarkdown(String platform, String resultText, String buildVersion, St
 - ${resultText}
     """.stripIndent()
 }
-
