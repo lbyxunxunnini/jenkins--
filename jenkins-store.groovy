@@ -291,7 +291,7 @@ pipeline {
                         zip -rq ${BUILD_NAME}.zip ${BUILD_NAME}
                     """
                     echo "✅ 压缩完成: ${zipFile}"
-                    sendDingTalkMessage("打包产物压缩完成:", "${zipFile}")
+                    sendDingTalkMessage("打包产物压缩完成:", "打包产物压缩完成:${zipFile}")
                 }
             }
 }
